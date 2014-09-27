@@ -1,3 +1,6 @@
+// Cross-browser version of `requestAnimationFrame`.
+// Falls back to other functions and settimeout for
+// older browsers.
 window.requestAnimFrame = (function(){
   return window.requestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
@@ -28,16 +31,23 @@ function init() {
     , b2DebugDraw = Box2D.Dynamics.b2DebugDraw
     ;
 
+  // Create the Box2D world. First arg is gravity in x and y, second
+  // tells Box2D to sleep inactive objects.
   world = new b2World(new b2Vec2(0, 10), true);
 
+  // Scale between Box2D units and pixels. (PPM, pixels per meter)
   var SCALE = 30;
+
+  // -------------------------------------------------
+  // Create the ground
+  // -------------------------------------------------
   var fixDef = new b2FixtureDef;
   fixDef.density = 1.0;
   fixDef.friction = 0.5;
-  fixDef.restitution = 0.2;
-  var bodyDef = new b2BodyDef;
+  // No bounce for you! Come back one year!
+  fixDef.restitution = 0.0;
 
-  //create ground
+  var bodyDef = new b2BodyDef;
   bodyDef.type = b2Body.b2_staticBody;
 
   // positions the center of the object (not upper left!)
@@ -49,26 +59,33 @@ function init() {
   fixDef.shape.SetAsBox((600 / SCALE) / 2, (10/SCALE) / 2);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
 
-  //create some objects
-  bodyDef.type = b2Body.b2_dynamicBody;
-  for(var i = 0; i < 150; ++i) {
-    if(Math.random() > 0.5) {
-      fixDef.shape = new b2PolygonShape;
-      fixDef.shape.SetAsBox(
-      Math.random() + 0.1 //half width
-      , Math.random() + 0.1 //half height
-      );
-    }
-    else {
-      fixDef.shape = new b2CircleShape(
-        Math.random() + 0.1 //radius
-      );
-    }
-    bodyDef.position.x = Math.random() * 25;
-    bodyDef.position.y = Math.random() * 10;
-    world.CreateBody(bodyDef).CreateFixture(fixDef);
+  // -------------------------------------------------
+  // Create Player 1, who's body is a half circle
+  // -------------------------------------------------
+  var vertexArray = []
+    , rad
+    , x
+    , y;
+  // Calculate the points along an arc, and add them
+  // as vertices
+  for(var deg = 180; deg <= 360; deg += 2) {
+    rad = deg * Math.PI / 180;
+    x = Math.cos(rad);
+    y = Math.sin(rad);
+    vertexArray.push(new b2Vec2(x, y));
   }
-  //setup debug draw
+
+  fixDef.shape.SetAsArray(vertexArray);
+
+  bodyDef.position.x = canvas.width / 2 / SCALE;
+  bodyDef.position.y = canvas.height / 2 / SCALE;
+  bodyDef.type = b2Body.b2_dynamicBody;
+
+  world.CreateBody(bodyDef).CreateFixture(fixDef);
+
+  // -------------------------------------------------
+  // Setup debug draw
+  // -------------------------------------------------
   var debugDraw = new b2DebugDraw();
   debugDraw.SetSprite(document.getElementById("c").getContext("2d"));
   debugDraw.SetDrawScale(SCALE);
@@ -76,14 +93,13 @@ function init() {
   debugDraw.SetLineThickness(1.0);
   debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
   world.SetDebugDraw(debugDraw);
-  setTimeout(init, 6000);
 }; // init()
 
 function update() {
   world.Step(
     1 / 60, //frame-rate
-    10, //velocity iterations
-    10 //position iterations
+    8, //velocity iterations
+    3 //position iterations
   );
   world.DrawDebugData();
   world.ClearForces();
