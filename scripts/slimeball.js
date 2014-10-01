@@ -33,7 +33,7 @@ function init() {
 
   // Create the Box2D world. First arg is gravity in x and y, second
   // tells Box2D to sleep inactive objects.
-  world = new b2World(new b2Vec2(0, 10), true);
+  world = new b2World(new b2Vec2(0, 15), true);
 
   // Scale between Box2D units and pixels. (PPM, pixels per meter)
   var SCALE = 30;
@@ -81,7 +81,45 @@ function init() {
   bodyDef.position.y = canvas.height / 2 / SCALE;
   bodyDef.type = b2Body.b2_dynamicBody;
 
-  world.CreateBody(bodyDef).CreateFixture(fixDef);
+  var player1Body = world.CreateBody(bodyDef);
+  player1Body.CreateFixture(fixDef);
+
+  // No friction
+  player1Body.SetAngularDamping(0.0);
+  player1Body.SetLinearDamping(0.0);
+
+  // -------------------------------------------------
+  // Input
+  // -------------------------------------------------
+  document.addEventListener('keydown', function(event) {
+    var currentVelocity =  player1Body.GetLinearVelocity();
+    // Pressed W (jump)
+    // TODO Only jump when touching the ground
+    if(event.keyCode == 87) {
+      player1Body.ApplyImpulse(new b2Vec2(0, -12), player1Body.GetWorldCenter());
+
+    }
+    // Pressed D (right)
+    if(event.keyCode == 68) {
+      player1Body.SetLinearVelocity(new b2Vec2(10, currentVelocity.y));
+    }
+    // Pressed D (right)
+    if(event.keyCode == 65) {
+      player1Body.SetLinearVelocity(new b2Vec2(-10, currentVelocity.y));
+    }
+  });
+
+  document.addEventListener('keyup', function(event) {
+    var currentVelocity =  player1Body.GetLinearVelocity();
+    // Released D (right)
+    if(event.keyCode == 68) {
+      player1Body.SetLinearVelocity(new b2Vec2(0, currentVelocity.y));
+    }
+    // Released A (left)
+    if(event.keyCode == 65) {
+      player1Body.SetLinearVelocity(new b2Vec2(0, currentVelocity.y));
+    }
+  });
 
   // -------------------------------------------------
   // Setup debug draw
