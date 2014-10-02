@@ -81,12 +81,9 @@ function init() {
   bodyDef.position.y = canvas.height / 2 / SCALE;
   bodyDef.type = b2Body.b2_dynamicBody;
 
+  // Make the player body frictionless
   var player1Body = world.CreateBody(bodyDef);
-  player1Body.CreateFixture(fixDef);
-
-  // No friction
-  player1Body.SetAngularDamping(0.0);
-  player1Body.SetLinearDamping(0.0);
+  player1Body.CreateFixture(fixDef).SetFriction(0);
 
   // -------------------------------------------------
   // Input
@@ -101,10 +98,14 @@ function init() {
     }
     // Pressed D (right)
     if(event.keyCode == 68) {
+      // Seems like SetLinearVelocity isn't waking the body for some
+      // reason (?)
+      player1Body.SetAwake(true);
       player1Body.SetLinearVelocity(new b2Vec2(10, currentVelocity.y));
     }
     // Pressed D (right)
     if(event.keyCode == 65) {
+      player1Body.SetAwake(true);
       player1Body.SetLinearVelocity(new b2Vec2(-10, currentVelocity.y));
     }
   });
@@ -113,10 +114,12 @@ function init() {
     var currentVelocity =  player1Body.GetLinearVelocity();
     // Released D (right)
     if(event.keyCode == 68) {
+      player1Body.SetAwake(true);
       player1Body.SetLinearVelocity(new b2Vec2(0, currentVelocity.y));
     }
     // Released A (left)
     if(event.keyCode == 65) {
+      player1Body.SetAwake(true);
       player1Body.SetLinearVelocity(new b2Vec2(0, currentVelocity.y));
     }
   });
