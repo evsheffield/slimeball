@@ -17,7 +17,7 @@ var ctx = canvas.getContext("2d");
 
 var world;
 
-function init() {
+var player1Body, player1Shadow;
 
   var b2Vec2 = Box2D.Common.Math.b2Vec2
     , b2BodyDef = Box2D.Dynamics.b2BodyDef
@@ -29,7 +29,10 @@ function init() {
     , b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
     , b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
     , b2DebugDraw = Box2D.Dynamics.b2DebugDraw
+    , b2MassData = Box2D.Collision.Shapes.b2MassData
     ;
+function init() {
+
 
   // Create the Box2D world. First arg is gravity in x and y, second
   // tells Box2D to sleep inactive objects.
@@ -55,6 +58,8 @@ function init() {
   bodyDef.position.y = canvas.height / SCALE;
   fixDef.shape = new b2PolygonShape;
 
+  fixDef.filter.categoryBits = 0001;
+
   // half width, half height. eg actual height here is 1 unit
   fixDef.shape.SetAsBox((600 / SCALE) / 2, (10/SCALE) / 2);
   world.CreateBody(bodyDef).CreateFixture(fixDef);
@@ -76,6 +81,8 @@ function init() {
   }
 
   fixDef.shape.SetAsArray(vertexArray);
+  fixDef.filter.categoryBits = 0010;
+  fixDef.filter.maskBits = 0101;
 
   bodyDef.position.x = (canvas.width / 2 - 200) / SCALE;
   bodyDef.position.y = (canvas.height / 2 + 100) / SCALE;
@@ -84,8 +91,12 @@ function init() {
   bodyDef.fixedRotation = true;
 
   // Make the player fixture frictionless
-  var player1Body = world.CreateBody(bodyDef);
+  player1Body = world.CreateBody(bodyDef);
   player1Body.CreateFixture(fixDef).SetFriction(0);
+
+  bodyDef.type = b2Body.b2_kinematicBody;
+  player1Shadow = world.CreateBody(bodyDef);
+  player1Shadow.CreateFixture(fixDef);
 
   player1Body.SetLinearDamping(0);
   player1Body.SetAngularDamping(0);
@@ -97,12 +108,20 @@ function init() {
   fixDef.shape = new b2CircleShape;
   fixDef.shape.SetRadius(20 / SCALE);
 
+  fixDef.filter.categoryBits = 0100;
+  fixDef.filter.maskBits = 0011;
+
   bodyDef.position.x = canvas.width / 2 / SCALE;
   bodyDef.position.y = canvas.height / 2 / SCALE;
+  bodyDef.type = b2Body.b2_dynamicBody;
 
   var ballBody = world.CreateBody(bodyDef);
   // Super bounce!
-  ballBody.CreateFixture(fixDef, 100).SetRestitution(1);
+  ballBody.CreateFixture(fixDef).SetRestitution(1.0);
+  var massData = new b2MassData();
+  ballBody.GetMassData(massData);
+  massData.mass = 500;
+  ballBody.SetMassData(massData);
 
   // -------------------------------------------------
   // Input
@@ -156,6 +175,13 @@ function init() {
 }; // init()
 
 function update() {
+
+  // Make the kinematic body shadow follow the dynamic one
+  // player1Shadow.SetPosition(player1Body.GetPosition());
+  player1Shadow.SetTransform(player1Body.GetTransform());
+  player1Shadow.SetLinearVelocity(player1Body.GetLinearVelocity());
+  player1Shadow.SetAngularVelocity(player1Body.GetAngularVelocity());
+
   world.Step(
     1 / 60, //frame-rate
     8, //velocity iterations
