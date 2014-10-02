@@ -77,13 +77,32 @@ function init() {
 
   fixDef.shape.SetAsArray(vertexArray);
 
-  bodyDef.position.x = canvas.width / 2 / SCALE;
-  bodyDef.position.y = canvas.height / 2 / SCALE;
+  bodyDef.position.x = (canvas.width / 2 - 200) / SCALE;
+  bodyDef.position.y = (canvas.height / 2 + 100) / SCALE;
   bodyDef.type = b2Body.b2_dynamicBody;
+  // Prevent the player from rotating
+  bodyDef.fixedRotation = true;
 
-  // Make the player body frictionless
+  // Make the player fixture frictionless
   var player1Body = world.CreateBody(bodyDef);
   player1Body.CreateFixture(fixDef).SetFriction(0);
+
+  player1Body.SetLinearDamping(0);
+  player1Body.SetAngularDamping(0);
+
+  // -------------------------------------------------
+  // Create a bouncy ball to play with
+  // -------------------------------------------------
+
+  fixDef.shape = new b2CircleShape;
+  fixDef.shape.SetRadius(20 / SCALE);
+
+  bodyDef.position.x = canvas.width / 2 / SCALE;
+  bodyDef.position.y = canvas.height / 2 / SCALE;
+
+  var ballBody = world.CreateBody(bodyDef);
+  // Super bounce!
+  ballBody.CreateFixture(fixDef, 100).SetRestitution(1);
 
   // -------------------------------------------------
   // Input
@@ -99,7 +118,7 @@ function init() {
     // Pressed D (right)
     if(event.keyCode == 68) {
       // Seems like SetLinearVelocity isn't waking the body for some
-      // reason (?)
+      // reason (?) Should probably be applying an impulse instead
       player1Body.SetAwake(true);
       player1Body.SetLinearVelocity(new b2Vec2(10, currentVelocity.y));
     }
